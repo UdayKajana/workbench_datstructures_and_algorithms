@@ -15,6 +15,10 @@ public class Graph {
     ArrayList<Vertex> startingVertices = new ArrayList<>();
     HashSet<Vertex> traversedVertices = new HashSet<>();
     HashMap<Integer, Vertex> allVertices = new HashMap<>();
+    String userNeedsNextIteration;
+    HashSet<String> AcceptableStrings = new HashSet<>();
+    boolean changePathDescription = true, changeValueDescription = true;
+    String buffer;
 
     private void insert() {
         Vertex node;
@@ -59,10 +63,6 @@ public class Graph {
         }
     }
 
-    private void delete() {
-
-    }
-
     private void traverseHandler() {
         do {
             Printer.printMenu("TRAVERSAL", "_", Arrays.asList(
@@ -76,7 +76,7 @@ public class Graph {
             switch (option) {
                 case 1 -> {
                     for (Vertex startingVertex : startingVertices) {
-                        System.out.println("starting with vertex["+startingVertex.data + "]");
+                        System.out.println("starting with vertex[" + startingVertex.data + "]");
                         System.out.print(startingVertex.data + ", ");
                         breadthFirstTraversal(startingVertex);
                         System.out.println();
@@ -84,15 +84,15 @@ public class Graph {
                 }
                 case 2 -> {
                     for (Vertex startingVertex : startingVertices) {
-                        System.out.println("starting with vertex["+startingVertex.data + "]");
+                        System.out.println("starting with vertex[" + startingVertex.data + "]");
                         depthFirstTraversal(startingVertex);
                         System.out.println();
                     }
                 }
-                case 3 -> manualTraversal();
+                case 3 -> interactiveTraversal();
                 default -> {
                     System.out.print("invalid selection\nDo you want to repeat[y/n]:");
-                    if (Character.toLowerCase(scanner.next().charAt(0))=='y')
+                    if (Character.toLowerCase(scanner.next().charAt(0)) == 'y')
                         traverseHandler();
                 }
             }
@@ -100,7 +100,7 @@ public class Graph {
         } while (Character.toLowerCase(scanner.next().charAt(0)) == 'y');
     }
 
-    private void manualTraversal() {
+    private void interactiveTraversal() {
         boolean isUpdated = false;
         int startingVertexToStart;
         if (startingVertices.isEmpty()) {
@@ -119,7 +119,7 @@ public class Graph {
             }
         if (vertex == null) {
             System.out.println("Invalid Starting Vertex....");
-            manualTraversal();
+            interactiveTraversal();
             return;
         }
         String data;
@@ -134,7 +134,7 @@ public class Graph {
             if (data.equalsIgnoreCase("end"))
                 break;
             else if (data.equalsIgnoreCase("reset")) {
-                manualTraversal();
+                interactiveTraversal();
                 return;
             } else {
                 intData = Integer.parseInt(data);
@@ -178,10 +178,89 @@ public class Graph {
     }
 
     private void modifyHandler() {
+        boolean updateEdgeDescriprion = true;
+        String[] scripts;
+        int pre, suc;
+        do {
+            Printer.printMenu("MODIFY", "_", Arrays.asList(
+                    "1. UPDATE VERTEX",
+                    "3. DELETE VERTEX",
+                    "2. ALTER EDGE"));
+            System.out.print("CHOOSE OPTION:");
+            int option = scanner.nextInt();
+            traversedVertices.clear();
+            queue.clear();
+            switch (option) {
+                case 1 -> {
+                    if (changePathDescription) {
+                        Printer.printHeading("""
+                                scenario 1: 0-1,2/3,4   <--- Vertex 0's neighbours [1,2] are updated with [3,4]
+                                scenario 2: root = 1    <--- updating root value
+                                   ;                    <--- stopping input
+                                   """);
+                        changePathDescription = false;
+                    }
+                    System.out.print("Enter the update script :");
+                    updateValueOfanExistingVertex(scanner.next());
+                }
+                case 2 -> {
+                    if (updateEdgeDescriprion) {
+                        Printer.printHeading("""
+                                use 'x' for deleting edge.
+                                use '+' for creating edge.
+                                e.g : 1x2, 2+3    <--- edge between 1,2 will be delated and 2,3 will be created
+                                   ;              <--- stopping input
+                                   """);
+                        updateEdgeDescriprion = false;
+                    }
+                    buffer = scanner.next().toLowerCase();
+                    if (buffer.equals(";"))
+                        break;
+                    scripts = buffer.split(",");
+                    for (String chunk : scripts) {
+                        pre = Integer.parseInt(chunk.substring(0, chunk.indexOf('x')));
+                        suc = Integer.parseInt(chunk.substring(chunk.indexOf('x') + 1));
+                        char action = chunk.contains("x") ? 'x' : (chunk.contains("+") ? '+' : '$');
+                        if (action == '$'){
+                            Printer.printWarningMessage("Invalid action or data");
+                        break;
+                    }
+                        if (allVertices.containsKey(pre) && allVertices.get(pre).vertices.contains(suc)) {
+                            if (action == 'x')
+                                allVertices.get(pre).vertices.remove(suc);
+                            else
+                                allVertices.get(pre).vertices.add(allVertices.get(suc));
+                            break;
+                        } else if (!allVertices.containsKey(pre))
+                            Printer.printWarningMessage("No " + pre + " present int the graph");
+                        else
+                            Printer.printWarningMessage("No " + suc + " present int the graph");
+                    }
+                }
+                case 3 -> deleteEdge();
+                case 4 -> deleteVertex();
+                default -> System.out.print("invalid selection");
+            }
+        } while (needIterationForThis(" modify "));
+    }
+
+    private void updateExistingEdge() {
+
+    }
+
+    private void updateValueOfanExistingVertex(String next) {
+    }
+
+    private void deleteEdge() {
+
+    }
+
+    private void deleteVertex() {
 
     }
 
     private void searchHandler() {
+        boolean elementNotFoundInSubTree = true;
         queue.clear();
         Printer.printMenu("SEARCH", "_", Arrays.asList(
                 "1. BREADTH FIRST",
@@ -191,14 +270,12 @@ public class Graph {
         System.out.print("Enter data to search :");
         switch (option) {
             case 1 -> {
-                for (Vertex v : startingVertices)
-                    while (breadthFirstSearch(v, scanner.nextInt()))
-                        ; // checkhere
+                for (int i = 0; i < startingVertices.size() && elementNotFoundInSubTree; i++)
+                    elementNotFoundInSubTree = breadthFirstSearch(startingVertices.get(i), scanner.nextInt());
             }
             case 2 -> {
-                for (Vertex v : startingVertices)
-                    while (depthFirstSearch(v, scanner.nextInt())) // checkhere
-                        ;
+                for (int i = 0; i < startingVertices.size() && elementNotFoundInSubTree; i++)
+                    elementNotFoundInSubTree = depthFirstSearch(startingVertices.get(i), scanner.nextInt());
             }
             default -> {
                 System.out.print("invalid selection\nDo you want to repeat[y/n]:");
@@ -283,15 +360,19 @@ public class Graph {
         return false;
     }
 
+    private boolean needIterationForThis(String context) {
+        System.out.print("Do you want to repeate " + context + " again [Yes/y] :");
+        return userNeedsNextIteration.equals("yes") || userNeedsNextIteration.equals("y") ? true : false;
+    }
+
     public static void main(String argvs[]) {
         Graph graph = new Graph();
         List<String> menu = Arrays.asList(
                 "1. INSERT",
-                "2. DELETE",
-                "3. MODIFY",
-                "4. SEARCH",
-                "5. TRAVERSE",
-                "6. EXIT");
+                "2. MODIFY",
+                "3. SEARCH",
+                "4. TRAVERSE",
+                "5. EXIT");
         do {
             try {
                 Printer.printMenu("GRAPH", "-", menu);
@@ -299,11 +380,10 @@ public class Graph {
                 int option = graph.scanner.nextInt();
                 switch (option) {
                     case 1 -> graph.insert();
-                    case 2 -> graph.delete();
-                    case 3 -> graph.modifyHandler();
-                    case 4 -> graph.searchHandler();
-                    case 5 -> graph.traverseHandler();
-                    case 6 -> {
+                    case 2 -> graph.modifyHandler();
+                    case 3 -> graph.searchHandler();
+                    case 4 -> graph.traverseHandler();
+                    case 5 -> {
                         graph.scanner.close();
                         System.exit(0);
                     }
@@ -316,4 +396,5 @@ public class Graph {
             }
         } while (true);
     }
+
 }
